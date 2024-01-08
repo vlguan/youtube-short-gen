@@ -1,8 +1,13 @@
+from utils.tiktokvoicemain.main import tts
 import whisper_timestamped as whisper
 import sys
 import random
-from text_to_speech import main as tts
 from moviepy.editor import *
+def adhdCrop_clip(video1, video2, duration):
+    video1 = crop_clip(video1, duration, (9,8))
+    video2 = crop_clip(video2, duration, (9,8))
+    final_clip = clips_array([[video1],[video2]])
+    return final_clip
 def crop_clip(video,duration, target_aspect_ratio=(9, 16)):
      
     # Get video dimensions
@@ -43,15 +48,24 @@ def create_subtitles(results, videosize):
             # txt_clip.write_videofile('Videos/sub%d.mp4'%i)
             subs.append(txt_clip.set_position(textPos))
     return subs
-def main(speedup):
+def main(speedup, adhdBool):
     model = whisper.load_model("medium", device='cpu')
+    ttsAudio = AudioFileClip('audioOutput/fulltts.mp3').fx(vfx.speedx,speedup)
+    # if ttsAudio.duration > 60:
+    #     print(ttsAudio.duration)
+    #     raise ValueError('tts too long skippped')
     audio = whisper.load_audio('audioOutput/fulltts.mp3')
     result = whisper.transcribe(model, audio, language='en')
-    randInt = random.randint(1,9)
-    print("rand%d.mp4 is being clipped"%randInt)
-    video = VideoFileClip('Videos/rand%d.mp4'%randInt)
-    ttsAudio = AudioFileClip('audioOutput/fulltts.mp3').fx(vfx.speedx,speedup)
-    clip = crop_clip(video, (ttsAudio.duration)*speedup)
+    randInt = random.randint(1,20)
+    if adhdBool:
+        vid1 = VideoFileClip('Videos/satisfying.mp4')
+        vid2 = VideoFileClip('Videos/rand%d.mp4'%randInt)
+        clip = adhdCrop_clip(vid1, vid2,  (ttsAudio.duration)*speedup)
+    else:
+        print("rand%d.mp4 is being clipped"%randInt)
+        video = VideoFileClip('Videos/rand%d.mp4'%randInt)
+        
+        clip = crop_clip(video, (ttsAudio.duration)*speedup)
     w,h = clip.size
     subs = create_subtitles(result,h)
     final = CompositeVideoClip([clip] + subs).fx(vfx.speedx,speedup)
